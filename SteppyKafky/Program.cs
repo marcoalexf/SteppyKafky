@@ -20,6 +20,12 @@ if (kafka is null)
 // Example usage
 Console.WriteLine($"Kafka bootstrap: {kafka.Consumer.BootstrapServers}");
 
+
+// Tokenize and print the Query from appsettings.json
+var query = config.GetValue<string>("Query") ?? string.Empty;
+Console.WriteLine("Tokenized Query:");
+foreach (var t in Tokenizer.Tokenize(query)) Console.WriteLine("  " + t);
+
 // Simple Kafka consumer
 var consumerConfig = new ConsumerConfig
 {
@@ -76,5 +82,3 @@ finally
 {
     consumer.Close();
 }
-
-
