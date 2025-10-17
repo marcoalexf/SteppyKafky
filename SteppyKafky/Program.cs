@@ -24,7 +24,11 @@ Console.WriteLine($"Kafka bootstrap: {kafka.Consumer.BootstrapServers}");
 // Tokenize and print the Query from appsettings.json
 var query = config.GetValue<string>("Query") ?? string.Empty;
 Console.WriteLine("Tokenized Query:");
-foreach (var t in Tokenizer.Tokenize(query)) Console.WriteLine("  " + t);
+var parsedQuery = QueryParser.Parse(query);
+foreach (var kvp in parsedQuery)
+{
+    Console.WriteLine($"  {kvp.Key} = {kvp.Value}");
+}
 
 // Simple Kafka consumer
 var consumerConfig = new ConsumerConfig
@@ -56,6 +60,20 @@ try
         try
         {
             var consumeResult = consumer.Consume(cts.Token);
+
+            // skip empty messages
+            if (consumeResult?.Message == null)
+            {
+                continue;
+            }
+
+            // If the message doesn't match all required key/value pairs from parsedQuery, skip it
+            if (!MessageMatcher.Matches(consumeResult, parsedQuery))
+            {
+                Console.WriteLine("Message does not match filter; skipping.");
+                continue;
+            }
+
             ConsoleMessageRenderer.Render(consumeResult);
             Console.WriteLine();
             Console.WriteLine("Press ENTER to consume the next message (or Ctrl-C to exit)...");
